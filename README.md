@@ -65,6 +65,15 @@ F4.XPPerLevel = 600
 F4.XPPerHexagon = 100
 ```
 
+ Player Metadata Setup
+Add the following lines to your qbx_core/server/player.lua file (around where other metadata fields are initialized):
+```lua
+playerData.metadata.crafting_level = playerData.metadata.crafting_level or 0
+playerData.metadata.crafting_xp = playerData.metadata.crafting_xp or 0
+```
+
+This ensures every player starts with crafting progression data (level and XP) initialized properly.
+
 ## Database
 Execute the following SQL to create the crafting benches table:
 ```sql
