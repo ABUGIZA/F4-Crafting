@@ -23,7 +23,7 @@ F4 Crafting is a modular crafting system for FiveM servers using the QBCore fram
 *Example in-game crafting table / workbench.*
 
 ## Requirements
-- QBCore Framework
+- Qbox Framework
 - ox_lib
 - oxmysql
 - interact
