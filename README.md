@@ -82,8 +82,8 @@ CREATE TABLE IF NOT EXISTS `f4_crafting` (
 - `/addcraftingtable` — Add crafting bench (admin)
 ## Demo / Video
 Watch the demo video: https://youtu.be/aEZfh85U2n4
-Discord : https://discord.gg/CXYX39zkma
 
+Discord : https://discord.gg/CXYX39zkma
 ## License
 MIT License — include the full MIT license text in the LICENSE file.
 
