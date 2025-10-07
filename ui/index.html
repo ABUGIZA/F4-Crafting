@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F4 - Crafting Table UI</title>
+    
+    <!-- TailwindCSS v3.4.1 -->
+    <script src="https://cdn.tailwindcss.com/3.4.1"></script>
+
+    
+    <!-- Google Fonts - Orbitron -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="h-screen">
+    <div class="ui-scale-wrapper">
+    <div class="ui-scale flex">
+    <!-- Sidebar -->
+    <div class="sidebar w-80 p-6 flex flex-col">
+        <!-- Title Section -->
+        <div class="mb-8">
+            <h1 class="font-orbitron text-2xl font-bold text-white title-glow mb-2">CRAFTING TABLE</h1>
+            <p class="text-sm secondary-text">Select an item to craft</p>
+        </div>
+        
+        <!-- Items List -->
+        <div class="flex-1 overflow-y-auto scrollbar-thin">
+            <!-- Item 1 -->
+            <div class="item-card active" onclick="selectItem(0)">
+                <div class="flex items-center mb-2">
+                    <img src="assets/img/ammo9mmbulletap.png" alt="9mm AP Ammo" class="w-8 h-8 mr-3">
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-white font-semibold text-sm">9mm AP Ammo</h3>
+                            <span class="level-badge">Lvl 1</span>
+                        </div>
+                        <p class="text-xs secondary-text mt-1">Armor-piercing 9mm rounds</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Item 2 -->
+            <div class="item-card" onclick="selectItem(1)">
+                <div class="flex items-center mb-2">
+                    <img src="assets/img/hunting_ammo.png" alt="Hunting Ammo" class="w-8 h-8 mr-3">
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-white font-semibold text-sm">Hunting Ammo</h3>
+                            <span class="level-badge">Lvl 1</span>
+                        </div>
+                        <p class="text-xs secondary-text mt-1">Precision hunting rounds</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Item 3 -->
+            <div class="item-card" onclick="selectItem(2)">
+                <div class="flex items-center mb-2">
+                    <img src="assets/img/ammo762mmbulletap.png" alt="7.62mm AP Ammo" class="w-8 h-8 mr-3">
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-white font-semibold text-sm">7.62mm AP Ammo</h3>
+                            <span class="level-badge">Lvl 2</span>
+                        </div>
+                        <p class="text-xs secondary-text mt-1">High-penetration rifle rounds</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Item 4 -->
+            <div class="item-card" onclick="selectItem(3)">
+                <div class="flex items-center mb-2">
+                    <img src="assets/img/ammoshotgunshell.png" alt="Shotgun Shells" class="w-8 h-8 mr-3">
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-white font-semibold text-sm">Shotgun Shells</h3>
+                            <span class="level-badge">Lvl 2</span>
+                        </div>
+                        <p class="text-xs secondary-text mt-1">Close-range devastation</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Item 5 -->
+            <div class="item-card" onclick="selectItem(4)">
+                <div class="flex items-center mb-2">
+                    <img src="assets/img/clothes_mask.png" alt="Clothing Mask" class="w-8 h-8 mr-3">
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-white font-semibold text-sm">Clothing Mask</h3>
+                            <span class="level-badge">Lvl 2</span>
+                        </div>
+                        <p class="text-xs secondary-text mt-1">Protective face covering</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Item 6 -->
+            <div class="item-card" onclick="selectItem(5)">
+                <div class="flex items-center mb-2">
+                    <img src="assets/img/ammo44magnumbulletap.png" alt=".44 Magnum AP" class="w-8 h-8 mr-3">
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-white font-semibold text-sm">.44 Magnum AP</h3>
+                            <span class="level-badge">Lvl 3</span>
+                        </div>
+                        <p class="text-xs secondary-text mt-1">Devastating armor-piercing rounds</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content flex-1 flex flex-col p-8">
+        <!-- Level System -->
+        <div class="level-system mb-8" role="progressbar" aria-valuemin="1" aria-valuemax="6" aria-valuenow="1">
+            <div class="level-progression">
+                <span class="level-start">1</span>
+                <div class="level-hexagons">
+                    <button class="level-hex active completed" data-index="0" aria-label="Level step 1" disabled><span class="hex-icon" aria-hidden="true"></span></button>
+                    <button class="level-hex current" data-index="1" title="XP 35/100" aria-label="Current step 2" disabled><span class="hex-icon" aria-hidden="true"></span></button>
+                    <button class="level-hex locked" data-index="2" aria-label="Locked step 3" disabled><span class="hex-icon" aria-hidden="true"></span></button>
+                    <button class="level-hex locked" data-index="3" aria-label="Locked step 4" disabled><span class="hex-icon" aria-hidden="true"></span></button>
+                    <button class="level-hex locked" data-index="4" aria-label="Locked step 5" disabled><span class="hex-icon" aria-hidden="true"></span></button>
+                    <button class="level-hex locked" data-index="5" aria-label="Locked step 6" disabled><span class="hex-icon" aria-hidden="true"></span></button>
+                </div>
+                <span class="level-end">2</span>
+            </div>
+        </div>
+        
+        <!-- Center Hexagon Display -->
+        <div class="flex-1 flex flex-col items-center justify-center">
+            <div class="hexagon-container mb-6">
+                <div class="hexagon">
+                    <div class="hexagon-content">
+                        <div class="item-preview-container">
+                            <img src="assets/img/ammo9mmbulletap.png" alt="Selected Item" class="item-preview">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Item Info -->
+            <div class="text-center mb-4">
+                <h3 class="item-name">9mm AP Ammo</h3>
+            </div>
+            
+            <!-- Quantity Input -->
+            <div class="flex justify-center mb-6">
+                <div class="quantity-input-container">
+                    <label for="quantity" class="quantity-label">Quantity</label>
+                    <div class="quantity-controls">
+                        <button type="button" class="quantity-btn quantity-decrease" onclick="decreaseQuantity()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <input type="number" id="quantity" class="quantity-input" value="1" min="1" max="999" readonly>
+                        <button type="button" class="quantity-btn quantity-increase" onclick="increaseQuantity()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Craft Button -->
+            <button class="craft-button font-orbitron" onclick="craftItem()">
+                Craft Item
+            </button>
+        </div>
+        
+        <!-- Resource Requirements -->
+        <div class="mt-8">
+            <h2 class="font-orbitron text-lg font-bold text-white title-glow mb-4">Material Requirements</h2>
+            <div class="resources-grid">
+                <!-- Resource 1 -->
+                <div class="resource-slot">
+                    <img src="assets/img/ammocrate.png" alt="Metal" class="w-12 h-12 mx-auto mb-3">
+                    <h3 class="text-white font-semibold text-sm mb-1">Metal</h3>
+                    <p class="text-xs secondary-text mb-2">YOU HAVE</p>
+                    <p class="font-orbitron text-lg font-bold text-white">25</p>
+                </div>
+                
+                <!-- Resource 2 -->
+                <div class="resource-slot">
+                    <img src="assets/img/ammocrate2.png" alt="Chemicals" class="w-12 h-12 mx-auto mb-3">
+                    <h3 class="text-white font-semibold text-sm mb-1">Chemicals</h3>
+                    <p class="text-xs secondary-text mb-2">YOU HAVE</p>
+                    <p class="font-orbitron text-lg font-bold text-white">12</p>
+                </div>
+                
+                <!-- Resource 3 -->
+                <div class="resource-slot">
+                    <img src="assets/img/clothing_1_3.png" alt="Components" class="w-12 h-12 mx-auto mb-3">
+                    <h3 class="text-white font-semibold text-sm mb-1">Components</h3>
+                    <p class="text-xs secondary-text mb-2">YOU HAVE</p>
+                    <p class="font-orbitron text-lg font-bold text-white">8</p>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal -->
+    <div id="craftModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-image">
+                <img id="modalItemImage" src="" alt="">
+            </div>
+            <h3 id="modalItemName" class="modal-title"></h3>
+            <p id="modalQuantity" class="modal-quantity">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10,9 9,9 8,9"/>
+                </svg>
+                Quantity: <span id="modalQuantityValue"></span>
+            </p>
+            <div class="modal-buttons">
+                <button class="modal-btn confirm" onclick="confirmCraft()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                    Confirm
+                </button>
+                <button class="modal-btn cancel" onclick="cancelCraft()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Custom JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
+
