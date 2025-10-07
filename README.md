@@ -1,6 +1,6 @@
 # F4 Crafting
 
-Professional crafting system for FiveM / QBCore with UI and level progression.
+Professional crafting system for FiveM / Qbox with UI and level progression.
 
 ## Description
 F4 Crafting is a modular crafting system for FiveM servers using the QBCore framework. It provides a polished UI, level progression, XP rewards, and configurable crafting recipes. Designed to work with ox_inventory or qb-inventory and integrate with ox_lib, oxmysql, interact, and object_gizmo.
@@ -30,9 +30,8 @@ F4 Crafting is a modular crafting system for FiveM servers using the QBCore fram
 - object_gizmo — https://github.com/DemiAutomatic/object_gizmo
 
 ## Installation
-1. Place the resource folder in `resources/[ox]/F4-Crafting`
-2. Execute `f4_Crafting.sql` in your database
-3. Add to `server.cfg`:
+1. Execute `f4_Crafting.sql` in your database
+2. Add to `server.cfg`:
 ```txt
 ensure F4-Crafting
 ```
@@ -81,8 +80,6 @@ CREATE TABLE IF NOT EXISTS `f4_crafting` (
 
 ## Commands
 - `/addcraftingtable` — Add crafting bench (admin)
-- `/removecraftingtable [id]` — Remove crafting bench (admin)
-
 ## Demo / Video
 Watch the demo video: https://youtu.be/aEZfh85U2n4
 
