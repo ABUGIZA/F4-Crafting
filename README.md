@@ -86,7 +86,3 @@ Watch the demo video: https://youtu.be/aEZfh85U2n4
 Discord : https://discord.gg/CXYX39zkma
 ## License
 MIT License — include the full MIT license text in the LICENSE file.
-
-## Notes
-- Make sure your server's oxmysql is configured and accessible.
-- If you use qb-inventory, verify inventory function names and adapt any inventory-specific calls in client/server code.
