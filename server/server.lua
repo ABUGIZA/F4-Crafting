@@ -301,13 +301,6 @@ QBCore.Commands.Add('addcraftingtable', 'Add a crafting table (Admin Only)', {},
     TriggerClientEvent('f4_crafting:createTable', source)
 end, 'admin')
 
-
-QBCore.Commands.Add('giveblueprint', 'Give a blueprint', {}, true, function(source, args)
-    local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
-    exports.ox_inventory:AddItem(src, 'blueprint', 1, { type = 'tools' })
-end, 'admin')
-
 if F4.Debug then
     print('^2[F4 Crafting]^7 Server loaded successfully')
 end
