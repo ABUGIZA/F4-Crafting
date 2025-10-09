@@ -1,38 +1,28 @@
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// F4-Crafting System - UI Script
-// Author: F4 Development
-// Description: Client-side UI logic for crafting interface
-// ═══════════════════════════════════════════════════════════════════════════════════════
-
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// GLOBAL VARIABLES
-// ═══════════════════════════════════════════════════════════════════════════════════════
 let selectedItem = 0;
 let playerLevel = 1;
 let items = [];
 let inventory = {};
+let countdownInterval = null;
 
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// ITEM SELECTION & RENDERING
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// Select an item from the list
+let isCrafting = false;
+let craftingItemIndex = -1;
+let craftingQuantity = 1;
+let craftingTimeLeft = 0;
+let craftingTotalTime = 0;
+
 function selectItem(index) {
     if (!items[index]) return;
     
-    // Check if item is locked
     if (items[index].level > playerLevel) {
         return;
     }
     
-    // Remove active class from all items
     document.querySelectorAll('.item-card').forEach(card => {
         card.classList.remove('active');
     });
     
-    // Add active class to selected item
     document.querySelectorAll('.item-card')[index].classList.add('active');
     
-    // Update main display
     const itemNameEl = document.querySelector('.item-name');
     const itemPreviewEl = document.querySelector('.item-preview');
     
@@ -44,18 +34,16 @@ function selectItem(index) {
     
     selectedItem = index;
     
-    // Update inventory display for this item
     updateInventoryDisplay();
+    
 }
 
-// Update item locks based on player level
 function updateItemLocks() {
     const itemCards = document.querySelectorAll('.item-card');
     itemCards.forEach((card, index) => {
         if (items[index].level > playerLevel) {
             card.classList.add('locked');
             
-            // Add lock icon if it doesn't exist
             if (!card.querySelector('.lock-icon')) {
                 const lockIcon = document.createElement('div');
                 lockIcon.className = 'lock-icon';
@@ -67,19 +55,16 @@ function updateItemLocks() {
         } else {
             card.classList.remove('locked');
             
-            // Remove lock icon if exists
             const lockIcon = card.querySelector('.lock-icon');
             if (lockIcon) {
                 lockIcon.remove();
             }
             
-            // Restore onclick
             card.onclick = () => selectItem(index);
         }
     });
 }
 
-// Render items in sidebar
 function renderItems() {
     const sidebar = document.querySelector('.sidebar .flex-1');
     if (!sidebar) return;
@@ -111,10 +96,6 @@ function renderItems() {
     updateItemLocks();
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// INVENTORY DISPLAY
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// Update inventory display based on selected item
 function updateInventoryDisplay() {
     if (items.length === 0 || !items[selectedItem]) return;
     
@@ -124,7 +105,6 @@ function updateInventoryDisplay() {
     
     resourcesContainer.innerHTML = '';
     
-    // Adjust grid density based on number of requirements
     resourcesContainer.classList.remove('dense', 'ultra');
     if (requirements.length >= 7 && requirements.length <= 9) {
         resourcesContainer.classList.add('dense');
@@ -137,11 +117,22 @@ function updateInventoryDisplay() {
         const needAmount = req.amount;
         const hasEnough = hasAmount >= needAmount;
         
+        const isBlueprint = req.metadata && Object.keys(req.metadata).length > 0;
+        let metadataText = '';
+        if (isBlueprint) {
+            const blueprintType = req.metadata.type || 'unknown';
+            const displayType = blueprintType.charAt(0).toUpperCase() + blueprintType.slice(1).replace('_', ' ');
+            metadataText = `<div class="bg-blue-900/30 border border-blue-500/30 rounded px-1 py-0.5 mb-2 max-w-fit mx-auto">
+                <p class="text-xs text-blue-300 font-medium text-center">${displayType} Blueprint</p>
+            </div>`;
+        }
+        
         const resourceSlot = document.createElement('div');
         resourceSlot.className = 'resource-slot';
         resourceSlot.innerHTML = `
             <img src="nui://ox_inventory/web/images/${req.item}.png" alt="${req.label}" class="w-12 h-12 mx-auto mb-3">
             <h3 class="text-white font-semibold text-sm mb-1">${req.label}</h3>
+            ${metadataText}
             <p class="text-xs secondary-text mb-2">REQUIRED: ${needAmount}</p>
             <p class="font-orbitron text-lg font-bold ${hasEnough ? 'text-green-400' : 'text-red-400'}">${hasAmount}</p>
         `;
@@ -150,11 +141,12 @@ function updateInventoryDisplay() {
     });
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// CRAFTING FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// Open crafting modal
 function craftItem() {
+    if (countdownInterval) {
+        showNotification('Crafting in progress, please wait...', 'error');
+        return;
+    }
+    
     const quantity = parseInt(document.getElementById('quantity').value);
     const itemName = items[selectedItem].name;
     const itemImage = items[selectedItem].image;
@@ -162,29 +154,24 @@ function craftItem() {
     const modal = document.getElementById('craftModal');
     if (!modal) return;
     
-    // Update modal content
     document.getElementById('modalItemImage').src = itemImage;
     document.getElementById('modalItemImage').alt = itemName;
     document.getElementById('modalItemName').textContent = itemName;
     document.getElementById('modalQuantityValue').textContent = quantity;
     
-    // Show modal
     modal.style.display = 'flex';
     modal.style.visibility = 'visible';
     modal.style.opacity = '1';
     modal.classList.add('show');
 }
 
-// Confirm craft action
 function confirmCraft() {
     const quantity = parseInt(document.getElementById('quantity').value);
     
-    // Hide modal
     const modal = document.getElementById('craftModal');
     modal.style.display = 'none';
     modal.classList.remove('show');
     
-    // Send to Lua
     fetch(`https://${GetParentResourceName()}/craft`, {
         method: 'POST',
         headers: {
@@ -197,17 +184,232 @@ function confirmCraft() {
     }).then(resp => resp.json()).catch(err => {});
 }
 
-// Cancel craft action
 function cancelCraft() {
     const modal = document.getElementById('craftModal');
     modal.style.display = 'none';
     modal.classList.remove('show');
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// QUANTITY CONTROLS
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// Increase quantity
+function startCountdown(totalTime) {
+    if (isCrafting && countdownInterval) {
+        return;
+    }
+    
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+    
+    const item = items[selectedItem];
+    const quantity = parseInt(document.getElementById('quantity').value) || 1;
+    
+    if (!item) return;
+    
+    isCrafting = true;
+    craftingItemIndex = selectedItem;
+    craftingQuantity = quantity;
+    craftingTimeLeft = totalTime;
+    craftingTotalTime = totalTime;
+    
+    let timeDisplay = '';
+    if (totalTime >= 60) {
+        const minutes = Math.floor(totalTime / 60);
+        const seconds = totalTime % 60;
+        timeDisplay = seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+    } else {
+        timeDisplay = `${totalTime}s`;
+    }
+    
+    const progressContainer = document.getElementById('craftingProgressContainer');
+    const progressPanel = document.getElementById('craftingProgressPanel');
+    
+    if (progressContainer && progressPanel) {
+        progressPanel.innerHTML = `
+            <div class="flex items-center space-x-4">
+                <div class="flex-shrink-0">
+                    <img src="${item.image}" alt="${item.name}" class="w-12 h-12 rounded-lg border border-gray-600">
+                </div>
+                
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-white font-semibold text-sm mb-1 truncate">${item.name}</h3>
+                    <p class="text-gray-300 text-xs">Qty: ${quantity}</p>
+                </div>
+                
+                <div class="flex-shrink-0 ml-2">
+                    <div class="relative w-12 h-12">
+                        <svg class="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
+                            <path class="text-gray-600" stroke="currentColor" stroke-width="2" fill="none"
+                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                            <path id="progressCircle" class="text-white" stroke="currentColor" stroke-width="2" fill="none"
+                                stroke-linecap="round"
+                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span id="progressTimeText" class="text-white text-xs font-bold">${timeDisplay}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        progressContainer.style.display = 'block';
+    }
+    
+    let timeLeft = totalTime;
+    const progressTimeText = document.getElementById('progressTimeText');
+    const progressCircle = document.getElementById('progressCircle');
+    
+    if (!progressTimeText || !progressCircle) return;
+    
+    updateCountdownDisplay(timeLeft, totalTime);
+    
+    countdownInterval = setInterval(() => {
+        timeLeft--;
+        craftingTimeLeft = timeLeft;
+        updateCountdownDisplay(timeLeft, totalTime);
+        
+        if (timeLeft <= 0) {
+            stopCountdown();
+        }
+    }, 1000);
+}
+
+function updateCountdownDisplay(timeLeft, totalTime) {
+    const progressTimeText = document.getElementById('progressTimeText');
+    const progressCircle = document.getElementById('progressCircle');
+    
+    if (!progressTimeText || !progressCircle) return;
+    
+    const progress = ((totalTime - timeLeft) / totalTime) * 100;
+    const circumference = 2 * Math.PI * 15.9155;
+    const strokeDasharray = circumference;
+    const strokeDashoffset = circumference - (progress / 100) * circumference;
+    
+    progressCircle.style.transition = 'stroke-dashoffset 1s ease-out, stroke 0.3s ease-out';
+    progressCircle.style.strokeDasharray = strokeDasharray;
+    progressCircle.style.strokeDashoffset = strokeDashoffset;
+    
+    if (timeLeft > 0) {
+        let timeDisplay = '';
+        if (timeLeft >= 60) {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timeDisplay = seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+        } else {
+            timeDisplay = `${timeLeft}s`;
+        }
+        
+        progressTimeText.textContent = timeDisplay;
+        
+        if (timeLeft <= 3) {
+            progressCircle.className = 'text-red-400 animate-pulse';
+            progressTimeText.className = 'text-red-400 text-xs font-bold';
+        } else if (timeLeft <= 10) {
+            progressCircle.className = 'text-orange-400';
+            progressTimeText.className = 'text-orange-400 text-xs font-bold';
+        } else {
+            progressCircle.className = 'text-white';
+            progressTimeText.className = 'text-white text-xs font-bold';
+        }
+    } else {
+        progressCircle.className = 'text-green-400';
+        progressTimeText.textContent = '0';
+        progressTimeText.className = 'text-green-400 text-xs font-bold';
+        
+        progressCircle.style.strokeDashoffset = 0;
+    }
+}
+
+function stopCountdown() {
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+    
+    isCrafting = false;
+    craftingItemIndex = -1;
+    craftingQuantity = 1;
+    craftingTimeLeft = 0;
+    craftingTotalTime = 0;
+    
+    setTimeout(() => {
+        const progressContainer = document.getElementById('craftingProgressContainer');
+        if (progressContainer) {
+            progressContainer.style.display = 'none';
+        }
+    }, 1500);
+}
+
+function restoreCraftingState() {
+    if (!isCrafting || craftingTimeLeft <= 0 || craftingItemIndex < 0) {
+        return;
+    }
+    
+    if (countdownInterval) {
+        return;
+    }
+    
+    const item = items[craftingItemIndex];
+    if (item) {
+            let timeDisplay = '';
+            if (craftingTimeLeft >= 60) {
+                const minutes = Math.floor(craftingTimeLeft / 60);
+                const seconds = craftingTimeLeft % 60;
+                timeDisplay = seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+            } else {
+                timeDisplay = `${craftingTimeLeft}s`;
+            }
+            
+            const progressContainer = document.getElementById('craftingProgressContainer');
+            const progressPanel = document.getElementById('craftingProgressPanel');
+            
+            if (progressContainer && progressPanel) {
+                progressPanel.innerHTML = `
+                    <div class="flex items-center space-x-4">
+                        <div class="flex-shrink-0">
+                            <img src="${item.image}" alt="${item.name}" class="w-12 h-12 rounded-lg border border-gray-600">
+                        </div>
+                        
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-white font-semibold text-sm mb-1 truncate">${item.name}</h3>
+                            <p class="text-gray-300 text-xs">Qty: ${craftingQuantity}</p>
+                        </div>
+                        
+                        <div class="flex-shrink-0 ml-2">
+                            <div class="relative w-12 h-12">
+                                <svg class="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
+                                    <path class="text-gray-600" stroke="currentColor" stroke-width="2" fill="none"
+                                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                    <path id="progressCircle" class="text-white" stroke="currentColor" stroke-width="2" fill="none"
+                                        stroke-linecap="round"
+                                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span id="progressTimeText" class="text-white text-xs font-bold">${timeDisplay}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                progressContainer.style.display = 'block';
+                
+                setTimeout(() => {
+                    updateCountdownDisplay(craftingTimeLeft, craftingTotalTime);
+                }, 100);
+                
+                countdownInterval = setInterval(() => {
+                    craftingTimeLeft--;
+                    updateCountdownDisplay(craftingTimeLeft, craftingTotalTime);
+                    
+                    if (craftingTimeLeft <= 0) {
+                        stopCountdown();
+                    }
+                }, 1000);
+            }
+    }
+}
+
 function increaseQuantity() {
     const input = document.getElementById('quantity');
     const currentValue = parseInt(input.value);
@@ -218,7 +420,6 @@ function increaseQuantity() {
     }
 }
 
-// Decrease quantity
 function decreaseQuantity() {
     const input = document.getElementById('quantity');
     const currentValue = parseInt(input.value);
@@ -229,10 +430,6 @@ function decreaseQuantity() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// LEVEL DISPLAY
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// Update level display with hexagons
 function updateLevelDisplay(level, xp, xpRequired, xpPerHex = 100) {
     const levelStart = document.querySelector('.level-start');
     const levelEnd = document.querySelector('.level-end');
@@ -240,7 +437,6 @@ function updateLevelDisplay(level, xp, xpRequired, xpPerHex = 100) {
     if (levelStart) levelStart.textContent = level;
     if (levelEnd) levelEnd.textContent = level + 1;
     
-    // Wrap hexagons in containers for labels
     const hexContainer = document.querySelector('.level-hexagons');
     const rawHexes = document.querySelectorAll('.level-hex');
     rawHexes.forEach(hex => {
@@ -264,7 +460,6 @@ function updateLevelDisplay(level, xp, xpRequired, xpPerHex = 100) {
         cell.classList.remove('active', 'current', 'completed', 'locked');
         const iconHolder = cell.querySelector('.hex-icon');
         
-        // Find or create XP label
         const wrap = cell.parentElement;
         let xpLabel = wrap.querySelector('.hex-xp-label');
         if (!xpLabel) {
@@ -274,13 +469,11 @@ function updateLevelDisplay(level, xp, xpRequired, xpPerHex = 100) {
         }
         
         if (idx < completed) {
-            // Completed hexagon
             cell.classList.add('completed');
             if (iconHolder) iconHolder.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
             xpLabel.textContent = '✓';
             xpLabel.style.color = '#10b981';
         } else if (idx === completed) {
-            // Current hexagon
             cell.classList.add('current', 'active');
             cell.style.setProperty('--xp', ratio.toString());
             cell.title = `XP ${Math.round(xpInPart)}/${Math.round(part)}`;
@@ -289,7 +482,6 @@ function updateLevelDisplay(level, xp, xpRequired, xpPerHex = 100) {
             xpLabel.textContent = remaining;
             xpLabel.style.color = '#3b82f6';
         } else {
-            // Locked hexagon
             cell.classList.add('locked');
             if (iconHolder) iconHolder.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/></svg>';
             xpLabel.textContent = Math.round(part);
@@ -298,16 +490,10 @@ function updateLevelDisplay(level, xp, xpRequired, xpPerHex = 100) {
     });
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// NOTIFICATION SYSTEM
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// Show notification in UI
 function showNotification(message, type = 'info') {
-    // Remove existing notifications
     const existingNotifications = document.querySelectorAll('.ui-notification');
     existingNotifications.forEach(notification => notification.remove());
     
-    // Create notification element
     const notification = document.createElement('div');
     notification.className = `ui-notification ui-notification-${type}`;
     notification.innerHTML = `
@@ -319,17 +505,14 @@ function showNotification(message, type = 'info') {
         </div>
     `;
     
-    // Add to UI
     const uiScale = document.querySelector('.ui-scale');
     if (uiScale) {
         uiScale.appendChild(notification);
         
-        // Animate in
         setTimeout(() => {
             notification.classList.add('show');
         }, 10);
         
-        // Auto remove after 5 seconds
         setTimeout(() => {
             notification.classList.remove('show');
             setTimeout(() => {
@@ -341,10 +524,6 @@ function showNotification(message, type = 'info') {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// UTILITY FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// Get resource name
 function GetParentResourceName() {
     let resourceName = 'F4-Crafting';
     if (window.location.href.includes('://nui-')) {
@@ -353,10 +532,6 @@ function GetParentResourceName() {
     return resourceName;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// EVENT LISTENERS
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// Listen for NUI messages from Lua
 window.addEventListener('message', function(event) {
     const data = event.data;
     
@@ -368,17 +543,18 @@ window.addEventListener('message', function(event) {
         const xpPerHex = data.xpPerHex || 100;
         const playerXP = (data.playerXP !== undefined && data.playerXP !== null) ? data.playerXP : 0;
         
-        // Update UI with data
         renderItems();
         updateInventoryDisplay();
         updateLevelDisplay(playerLevel, playerXP, xpRequired, xpPerHex);
         
-        // Show UI
         const wrapper = document.querySelector('.ui-scale-wrapper');
         if (wrapper) wrapper.style.display = 'flex';
         
-        // Select first available item
         selectItem(0);
+        
+        setTimeout(() => {
+            restoreCraftingState();
+        }, 200);
     } else if (data.action === 'close') {
         const wrapper = document.querySelector('.ui-scale-wrapper');
         if (wrapper) wrapper.style.display = 'none';
@@ -393,23 +569,24 @@ window.addEventListener('message', function(event) {
         updateItemLocks();
     } else if (data.action === 'showNotification') {
         showNotification(data.message, data.type);
+    } else if (data.action === 'startCountdown') {
+        startCountdown(data.time);
+    } else if (data.action === 'stopCountdown') {
+        stopCountdown();
     }
 });
 
-// ESC key handler
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         event.preventDefault();
         event.stopPropagation();
         
-        // Check if modal is open first
         const modal = document.getElementById('craftModal');
         if (modal && (modal.style.display === 'flex' || modal.classList.contains('show'))) {
             cancelCraft();
             return;
         }
         
-        // Close UI
         try {
             fetch(`https://${GetParentResourceName()}/closeUI`, {
                 method: 'POST',
@@ -419,11 +596,7 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// INITIALIZATION
-// ═══════════════════════════════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function() {
-    // Wrap static HTML hexagons in hex-wrap divs
     const hexContainer = document.querySelector('.level-hexagons');
     const rawHexes = document.querySelectorAll('.level-hex');
     
@@ -434,12 +607,10 @@ document.addEventListener('DOMContentLoaded', function() {
             hexContainer.replaceChild(wrap, hex);
             wrap.appendChild(hex);
             
-            // Create XP label as sibling to hex
             const xpLabel = document.createElement('div');
             xpLabel.className = 'hex-xp-label';
             wrap.appendChild(xpLabel);
             
-            // Set initial value based on hex state
             const iconHolder = hex.querySelector('.hex-icon');
             if (hex.classList.contains('completed')) {
                 xpLabel.textContent = '✓';

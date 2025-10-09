@@ -47,6 +47,87 @@ local function GetItemCount(Player, src, itemName)
     return 0
 end
 
+local function CheckItemWithMetadata(Player, src, itemName, requiredMetadata, amount)
+    if not requiredMetadata then
+        return GetItemCount(Player, src, itemName) >= amount
+    end
+    
+    local playerItems = Player.PlayerData.items
+    if not playerItems then return false end
+    
+    local matchCount = 0
+    for _, playerItem in pairs(playerItems) do
+        if playerItem and playerItem.name == itemName then
+            local metadata = playerItem.info or playerItem.metadata or {}
+            local metadataMatch = true
+            
+            for key, value in pairs(requiredMetadata) do
+                if metadata[key] ~= value then
+                    metadataMatch = false
+                    break
+                end
+            end
+            
+            if metadataMatch then
+                matchCount = matchCount + (playerItem.count or playerItem.amount or 1)
+            end
+        end
+    end
+    
+    return matchCount >= amount
+end
+
+local function RemoveItemWithMetadata(Player, src, itemName, requiredMetadata, amount)
+    if not requiredMetadata then
+        return RemoveItem(Player, src, itemName, amount)
+    end
+    
+    local playerItems = Player.PlayerData.items
+    if not playerItems then return false end
+    
+    local toRemove = amount
+    local removedSlots = {}
+    
+    for slot, playerItem in pairs(playerItems) do
+        if toRemove <= 0 then break end
+        
+        if playerItem and playerItem.name == itemName then
+            local metadata = playerItem.info or playerItem.metadata or {}
+            local metadataMatch = true
+            
+            for key, value in pairs(requiredMetadata) do
+                if metadata[key] ~= value then
+                    metadataMatch = false
+                    break
+                end
+            end
+            
+            if metadataMatch then
+                local itemAmount = playerItem.count or playerItem.amount or 1
+                local removeAmount = math.min(itemAmount, toRemove)
+                
+                table.insert(removedSlots, {slot = slot, amount = removeAmount})
+                toRemove = toRemove - removeAmount
+            end
+        end
+    end
+    
+    if toRemove > 0 then
+        return false
+    end
+    
+    for _, removeData in ipairs(removedSlots) do
+        if IsOxInventory() then
+            exports.ox_inventory:RemoveItem(src, itemName, removeData.amount, nil, removeData.slot)
+        else
+            Player.Functions.RemoveItem(itemName, removeData.amount, removeData.slot)
+            TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[itemName], 'remove', removeData.amount)
+        end
+    end
+    
+    return true
+end
+
 local function RemoveItem(Player, src, itemName, amount)
     if IsOxInventory() then
         return exports.ox_inventory:RemoveItem(src, itemName, amount)
@@ -116,8 +197,20 @@ QBCore.Functions.CreateCallback('f4_crafting:craftItem', function(source, cb, it
     
     local missingItems = {}
     for _, req in ipairs(item.requirements) do
-        if GetItemCount(Player, src, req.item) < req.amount * quantity then
-            table.insert(missingItems, req.label)
+        if req.metadata then
+            if not CheckItemWithMetadata(Player, src, req.item, req.metadata, req.amount * quantity) then
+                local hasBlueprint = GetItemCount(Player, src, req.item) > 0
+                if hasBlueprint and req.item == 'blueprint' and req.metadata.type then
+                    local displayType = req.metadata.type:gsub('_', ' '):gsub('^%l', string.upper)
+                    table.insert(missingItems, 'You need ' .. displayType .. ' Blueprint')
+                else
+                    table.insert(missingItems, req.label)
+                end
+            end
+        else
+            if GetItemCount(Player, src, req.item) < req.amount * quantity then
+                table.insert(missingItems, req.label)
+            end
         end
     end
     
@@ -125,12 +218,31 @@ QBCore.Functions.CreateCallback('f4_crafting:craftItem', function(source, cb, it
         return cb(false, 'Missing materials: ' .. table.concat(missingItems, ', '))
     end
     
+    local craftTime = item.time or 0
+    local totalCraftTime = craftTime * quantity
+    
+    if totalCraftTime > 0 then
+        TriggerClientEvent('f4_crafting:startCountdown', src, totalCraftTime)
+    end
+    
+    if totalCraftTime > 0 then
+        Wait(totalCraftTime * 1000)
+    end
+    
     local removedItems = {}
     for _, req in ipairs(item.requirements) do
         local amount = req.amount * quantity
-        if not RemoveItem(Player, src, req.item, amount) then
-            for _, removed in ipairs(removedItems) do
-                AddItem(Player, src, removed.item, removed.amount)
+        local removed = false
+        
+        if req.metadata then
+            removed = RemoveItemWithMetadata(Player, src, req.item, req.metadata, amount)
+        else
+            removed = RemoveItem(Player, src, req.item, amount)
+        end
+        
+        if not removed then
+            for _, removedItem in ipairs(removedItems) do
+                AddItem(Player, src, removedItem.item, removedItem.amount)
             end
             return cb(false, 'Failed to remove ' .. req.label)
         end
@@ -187,6 +299,13 @@ end)
 
 QBCore.Commands.Add('addcraftingtable', 'Add a crafting table (Admin Only)', {}, true, function(source, args)
     TriggerClientEvent('f4_crafting:createTable', source)
+end, 'admin')
+
+
+QBCore.Commands.Add('giveblueprint', 'Give a blueprint', {}, true, function(source, args)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    exports.ox_inventory:AddItem(src, 'blueprint', 1, { type = 'tools' })
 end, 'admin')
 
 if F4.Debug then

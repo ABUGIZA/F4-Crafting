@@ -105,6 +105,7 @@ function OpenCraftingUI()
                 level = item.level,
                 description = item.description,
                 xpReward = item.xpReward,
+                time = item.time or 0,
                 requirements = item.requirements
             }
         end
@@ -156,7 +157,15 @@ RegisterNUICallback('craft', function(data, cb)
         return
     end
     
+    local item = F4.CraftingItems[itemIndex + 1]
+    local craftTime = (item and item.time) or 0
+    local totalTime = craftTime * quantity
+    
     QBCore.Functions.TriggerCallback('f4_crafting:craftItem', function(success, message)
+        SendNUIMessage({
+            action = 'stopCountdown'
+        })
+        
         if success then
             Wait(100)
             
@@ -289,6 +298,18 @@ RegisterNetEvent('f4_crafting:updateLevel', function(level, xp)
         })
     end
 end)
+
+RegisterNetEvent('f4_crafting:startCountdown', function(totalTime)
+    if isUIOpen then
+        SendNUIMessage({
+            action = 'startCountdown',
+            time = totalTime
+        })
+    end
+end)
+
+
+
 
 CreateThread(function()
     Wait(1000)

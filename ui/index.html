@@ -5,30 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>F4 - Crafting Table UI</title>
     
-    <!-- TailwindCSS v3.4.1 -->
     <script src="https://cdn.tailwindcss.com/3.4.1"></script>
 
-    
-    <!-- Google Fonts - Orbitron -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
     
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="h-screen">
     <div class="ui-scale-wrapper">
     <div class="ui-scale flex">
-    <!-- Sidebar -->
     <div class="sidebar w-80 p-6 flex flex-col">
-        <!-- Title Section -->
         <div class="mb-8">
             <h1 class="font-orbitron text-2xl font-bold text-white title-glow mb-2">CRAFTING TABLE</h1>
             <p class="text-sm secondary-text">Select an item to craft</p>
         </div>
         
-        <!-- Items List -->
         <div class="flex-1 overflow-y-auto scrollbar-thin">
-            <!-- Item 1 -->
             <div class="item-card active" onclick="selectItem(0)">
                 <div class="flex items-center mb-2">
                     <img src="assets/img/ammo9mmbulletap.png" alt="9mm AP Ammo" class="w-8 h-8 mr-3">
@@ -42,7 +34,6 @@
                 </div>
             </div>
             
-            <!-- Item 2 -->
             <div class="item-card" onclick="selectItem(1)">
                 <div class="flex items-center mb-2">
                     <img src="assets/img/hunting_ammo.png" alt="Hunting Ammo" class="w-8 h-8 mr-3">
@@ -56,7 +47,6 @@
                 </div>
             </div>
             
-            <!-- Item 3 -->
             <div class="item-card" onclick="selectItem(2)">
                 <div class="flex items-center mb-2">
                     <img src="assets/img/ammo762mmbulletap.png" alt="7.62mm AP Ammo" class="w-8 h-8 mr-3">
@@ -70,7 +60,6 @@
                 </div>
             </div>
             
-            <!-- Item 4 -->
             <div class="item-card" onclick="selectItem(3)">
                 <div class="flex items-center mb-2">
                     <img src="assets/img/ammoshotgunshell.png" alt="Shotgun Shells" class="w-8 h-8 mr-3">
@@ -84,7 +73,6 @@
                 </div>
             </div>
             
-            <!-- Item 5 -->
             <div class="item-card" onclick="selectItem(4)">
                 <div class="flex items-center mb-2">
                     <img src="assets/img/clothes_mask.png" alt="Clothing Mask" class="w-8 h-8 mr-3">
@@ -98,7 +86,6 @@
                 </div>
             </div>
             
-            <!-- Item 6 -->
             <div class="item-card" onclick="selectItem(5)">
                 <div class="flex items-center mb-2">
                     <img src="assets/img/ammo44magnumbulletap.png" alt=".44 Magnum AP" class="w-8 h-8 mr-3">
@@ -114,9 +101,7 @@
         </div>
     </div>
     
-    <!-- Main Content -->
     <div class="main-content flex-1 flex flex-col p-8">
-        <!-- Level System -->
         <div class="level-system mb-8" role="progressbar" aria-valuemin="1" aria-valuemax="6" aria-valuenow="1">
             <div class="level-progression">
                 <span class="level-start">1</span>
@@ -132,7 +117,14 @@
             </div>
         </div>
         
-        <!-- Center Hexagon Display -->
+        <div id="craftingProgressContainer" style="position: absolute; top: 8rem; right: 2rem; width: 18rem; z-index: 10; display: none;">
+            <div id="craftingProgressPanel" class="bg-gray-800/30 rounded-xl p-3 border border-gray-600/30 min-h-[80px]">
+                <div class="flex items-center justify-center h-full text-gray-400">
+                    <p class="text-sm">Crafting in progress...</p>
+                </div>
+            </div>
+        </div>
+
         <div class="flex-1 flex flex-col items-center justify-center">
             <div class="hexagon-container mb-6">
                 <div class="hexagon">
@@ -144,12 +136,10 @@
                 </div>
             </div>
             
-            <!-- Item Info -->
             <div class="text-center mb-4">
                 <h3 class="item-name">9mm AP Ammo</h3>
             </div>
             
-            <!-- Quantity Input -->
             <div class="flex justify-center mb-6">
                 <div class="quantity-input-container">
                     <label for="quantity" class="quantity-label">Quantity</label>
@@ -159,7 +149,7 @@
                                 <path d="M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </button>
-                        <input type="number" id="quantity" class="quantity-input" value="1" min="1" max="999" readonly>
+                        <input type="number" id="quantity" class="quantity-input" value="1" min="1" max="999">
                         <button type="button" class="quantity-btn quantity-increase" onclick="increaseQuantity()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -169,17 +159,15 @@
                 </div>
             </div>
             
-            <!-- Craft Button -->
             <button class="craft-button font-orbitron" onclick="craftItem()">
                 Craft Item
             </button>
         </div>
         
-        <!-- Resource Requirements -->
+        
         <div class="mt-8">
             <h2 class="font-orbitron text-lg font-bold text-white title-glow mb-4">Material Requirements</h2>
             <div class="resources-grid">
-                <!-- Resource 1 -->
                 <div class="resource-slot">
                     <img src="assets/img/ammocrate.png" alt="Metal" class="w-12 h-12 mx-auto mb-3">
                     <h3 class="text-white font-semibold text-sm mb-1">Metal</h3>
@@ -187,7 +175,6 @@
                     <p class="font-orbitron text-lg font-bold text-white">25</p>
                 </div>
                 
-                <!-- Resource 2 -->
                 <div class="resource-slot">
                     <img src="assets/img/ammocrate2.png" alt="Chemicals" class="w-12 h-12 mx-auto mb-3">
                     <h3 class="text-white font-semibold text-sm mb-1">Chemicals</h3>
@@ -195,7 +182,6 @@
                     <p class="font-orbitron text-lg font-bold text-white">12</p>
                 </div>
                 
-                <!-- Resource 3 -->
                 <div class="resource-slot">
                     <img src="assets/img/clothing_1_3.png" alt="Components" class="w-12 h-12 mx-auto mb-3">
                     <h3 class="text-white font-semibold text-sm mb-1">Components</h3>
@@ -203,12 +189,9 @@
                     <p class="font-orbitron text-lg font-bold text-white">8</p>
                 </div>
             </div>
-                </div>
-            </div>
         </div>
     </div>
     
-    <!-- Modal -->
     <div id="craftModal" class="modal">
         <div class="modal-content">
             <div class="modal-image">
@@ -243,7 +226,6 @@
         </div>
     </div>
     
-    <!-- Custom JavaScript -->
     <script src="script.js"></script>
 </body>
 </html>
