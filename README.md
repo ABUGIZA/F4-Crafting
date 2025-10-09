@@ -1,50 +1,36 @@
 # F4 Crafting
-
-Professional crafting system for FiveM / Qbox with UI and level progression.
-
-## Description
-F4 Crafting is a modular crafting system for FiveM servers using the QBCore framework. It provides a polished UI, level progression, XP rewards, and configurable crafting recipes. Designed to work with ox_inventory or qb-inventory and integrate with ox_lib, oxmysql, interact, and object_gizmo.
-
-## Features
-- Interactive crafting UI with stations
-- Item level progression and XP rewards
-- Configurable crafting recipes and material requirements
-- Support for ox_inventory and qb-inventory
-- Integration with ox_lib, oxmysql, interact and object_gizmo
-
-## Screenshots
-![Main UI - Item selection and crafting](https://res.cloudinary.com/dmcz9xz4d/image/upload/v1759866796/85de3c78-c396-44df-b502-c3d85d3549dd.png)
-*Main crafting UI — item selection, crafting preview and material requirements.*
-
-![Alternate UI view](https://res.cloudinary.com/dmcz9xz4d/image/upload/v1759866812/aa81b673-ee92-4ebf-a633-fa4ea019a625.png)
-*Alternate view highlighting materials and controls.*
-
-![In-game Workbench / Crafting Table](https://res.cloudinary.com/dmcz9xz4d/image/upload/v1759866826/5a414acf-02bf-4da0-bf24-f9ee755b3cd7.png)
-*Example in-game crafting table / workbench.*
-
-## Requirements
-- Qbox Framework
-- ox_lib
-- oxmysql
-- interact
-- object_gizmo — https://github.com/DemiAutomatic/object_gizmo
-
-## Installation
-1. Execute `f4_Crafting.sql` in your database
-2. Add to `server.cfg`:
-```txt
+##
+ Installation
+1.
+ Execute 
+`
+f4_Crafting.sql
+`
+ in your database
+2.
+ Add to 
+`
+server.cfg
+`
+:
+```
+txt
 ensure F4-Crafting
 ```
-
-## Configuration
-
-Inventory System — edit `shared/shared.lua`:
-```lua
+##
+ Configuration
+Inventory System — edit 
+`
+shared/shared.lua
+`
+:
+```
+lua
 F4.img = "ox_inventory"  -- "ox_inventory" or "qb-inventory"
 ```
-
 Add crafting items — example:
-```lua
+```
+lua
 F4.CraftingItems = {
     {
         name = 'Item Name',
@@ -58,25 +44,29 @@ F4.CraftingItems = {
     }
 }
 ```
-
 XP settings (example):
-```lua
+```
+lua
 F4.XPPerLevel = 600
 F4.XPPerHexagon = 100
 ```
-
  Player Metadata Setup
-Add the following lines to your `qbx_core/server/player.lua` file (around where other metadata fields are initialized):
-```lua
+Add the following lines to your 
+`
+qbx_core/server/player.lua
+`
+ file (around where other metadata fields are initialized):
+```
+lua
 playerData.metadata.crafting_level = playerData.metadata.crafting_level or 0
 playerData.metadata.crafting_xp = playerData.metadata.crafting_xp or 0
 ```
-
 This ensures every player starts with crafting progression data (level and XP) initialized properly.
-
-## Database
+##
+ Database
 Execute the following SQL to create the crafting benches table:
-```sql
+```
+sql
 CREATE TABLE IF NOT EXISTS `f4_crafting` (
     `id` INT(11) NOT NULL AUTO_INCREMENT COMMENT 'Unique identifier for each crafting bench',
     `x` FLOAT NOT NULL COMMENT 'X coordinate of the crafting bench',
@@ -86,12 +76,39 @@ CREATE TABLE IF NOT EXISTS `f4_crafting` (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
-
-## Commands
-- `/addcraftingtable` — Add crafting bench (admin)
-## Demo / Video
+##
+ Commands
+-
+ 
+`
+/addcraftingtable
+`
+ — Add crafting bench (admin)
+##
+ Demo / Video
 Watch the demo video: https://youtu.be/aEZfh85U2n4
-
 Discord : https://discord.gg/CXYX39zkma
-## License
+##
+ License
 MIT License — include the full MIT license text in the LICENSE file.
+
+## Updates / Changelog
+
+- **Blueprint System Added**: A new blueprint system has been implemented. Make sure to add the blueprint item to `ox_inventory\data\items`:
+```lua
+['blueprint'] = {
+    label = 'Blueprint',
+    weight = 50,
+    stack = false,
+    close = true,
+    consume = 0,
+    description = 'A professional crafting blueprint with detailed specifications and requirements',
+    client = {
+        image = 'blueprint.png'
+    }
+},
+```
+
+- **Dynamic Crafting Time System**: Crafting time now scales based on the number of items being crafted.
+
+**View Update Demo**: https://streamable.com/031rwo
