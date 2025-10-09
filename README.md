@@ -1,62 +1,4 @@
 # F4 Crafting
-##
- Installation
-1.
- Execute 
-`
-f4_Crafting.sql
-`
- in your database
-2.
- Add to 
-`
-server.cfg
-`
-:
-```
-txt
-ensure F4-Crafting
-```
-##
- Configuration
-Inventory System — edit 
-`
-shared/shared.lua
-`
-:
-```
-lua
-F4.img = "ox_inventory"  -- "ox_inventory" or "qb-inventory"
-```
-Add crafting items — example:
-```
-lua
-F4.CraftingItems = {
-    {
-        name = 'Item Name',
-        item = 'item_spawn_name',
-        level = 0,
-        description = 'Item description',
-        xpReward = 10,
-        requirements = {
-            { item = 'steel', amount = 2, label = 'Steel' }
-        }
-    }
-}
-```
-XP settings (example):
-```
-lua
-F4.XPPerLevel = 600
-F4.XPPerHexagon = 100
-```
- Player Metadata Setup
-Add the following lines to your 
-`
-qbx_core/server/player.lua
-`
- file (around where other metadata fields are initialized):
-```
 lua
 playerData.metadata.crafting_level = playerData.metadata.crafting_level or 0
 playerData.metadata.crafting_xp = playerData.metadata.crafting_xp or 0
@@ -77,7 +19,8 @@ CREATE TABLE IF NOT EXISTS `f4_crafting` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 ##
- Commands
+ 
+Commands
 -
  
 `
@@ -91,11 +34,20 @@ Discord : https://discord.gg/CXYX39zkma
 ##
  License
 MIT License — include the full MIT license text in the LICENSE file.
-
-## Updates / Changelog
-
-- **Blueprint System Added**: A new blueprint system has been implemented. Make sure to add the blueprint item to `ox_inventory\data\items`:
-```lua
+##
+ Updates / Changelog
+-
+ 
+**
+Blueprint System Added
+**
+: A new blueprint system has been implemented. Make sure to add the blueprint item to 
+`
+ox_inventory\data\items
+`
+:
+```
+lua
 ['blueprint'] = {
     label = 'Blueprint',
     weight = 50,
@@ -109,6 +61,24 @@ MIT License — include the full MIT license text in the LICENSE file.
 },
 ```
 
-- **Dynamic Crafting Time System**: Crafting time now scales based on the number of items being crafted.
+### Giving a Player a Blueprint (via ox_inventory)
+To give a player a blueprint item, use the following export command in your server script:
 
-**View Update Demo**: https://streamable.com/031rwo
+```lua
+exports.ox_inventory:AddItem(src, 'blueprint', 1, { type = 'tools' })
+```
+- `src` is the player's source ID.
+- `'blueprint'` is the item name.
+- `1` is the quantity.
+- `{ type = 'tools' }` is optional metadata.
+
+-
+ 
+**
+Dynamic Crafting Time System
+**
+: Crafting time now scales based on the number of items being crafted.
+**
+View Update Demo
+**
+: https://streamable.com/031rwo
