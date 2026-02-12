@@ -10,10 +10,13 @@ F4 Crafting is a modular crafting system for FiveM servers using the QBCore fram
 - Configurable crafting recipes and material requirements
 - Support for ox_inventory and qb-inventory
 - Integration with ox_lib, oxmysql, interact and object_gizmo
+- Persistent crafting queue saved in database
+- Table-bound crafting and claiming (same table required)
+- Ready-items panel with manual claim button (no auto-give)
 
 ## Screenshots
 ![Main UI - Item selection and crafting](https://camo.githubusercontent.com/9b84abf4cf3bc2eba5eb2c9cef08cd59f2ef9c92c163ec12a4d0505fcc6641a2/68747470733a2f2f7265732e636c6f7564696e6172792e636f6d2f646d637a39787a34642f696d6167652f75706c6f61642f76313735393836363739362f38356465336337382d633339362d343464662d623530322d6333643835643335343964642e706e67)
-Main crafting UI — item selection, crafting preview and material requirements.
+Main crafting UI - item selection, crafting preview and material requirements.
 
 ![Alternate UI view](https://camo.githubusercontent.com/9e9d878351798671de6023279811e20de08fb56a65c005f1405164101c934dc4/68747470733a2f2f7265732e636c6f7564696e6172792e636f6d2f646d637a39787a34642f696d6167652f75706c6f61642f76313735393836363831322f61613831623637332d656539322d346562662d613633332d6661346561303139613632352e706e67)
 Alternate view highlighting materials and controls.
@@ -26,22 +29,22 @@ Example in-game crafting table / workbench.
 - ox_lib
 - oxmysql
 - interact
-- object_gizmo — https://github.com/DemiAutomatic/object_gizmo
+- object_gizmo - https://github.com/DemiAutomatic/object_gizmo
 
 ## Installation
-1. Execute f4_Crafting.sql in your database
-2. Add to server.cfg:
-```
+1. Execute `f4_Crafting.sql` in your database.
+2. Add to `server.cfg`:
+```cfg
 ensure F4-Crafting
 ```
 
 ## Configuration
-### Inventory System — edit shared/shared.lua:
+### Inventory System - edit `shared/shared.lua`:
 ```lua
 F4.img = "ox_inventory"  -- "ox_inventory" or "qb-inventory"
 ```
 
-### Add crafting items — example:
+### Add crafting items - example:
 ```lua
 F4.CraftingItems = {
     {
@@ -64,7 +67,7 @@ F4.XPPerHexagon = 100
 ```
 
 ### Player Metadata Setup
-Add the following lines to your qbx_core/server/player.lua file (around where other metadata fields are initialized):
+Add the following lines to your `qbx_core/server/player.lua` file (around where other metadata fields are initialized):
 ```lua
 playerData.metadata.crafting_level = playerData.metadata.crafting_level or 0
 playerData.metadata.crafting_xp = playerData.metadata.crafting_xp or 0
@@ -72,7 +75,7 @@ playerData.metadata.crafting_xp = playerData.metadata.crafting_xp or 0
 This ensures every player starts with crafting progression data (level and XP) initialized properly.
 
 ## Database
-Execute the following SQL to create the crafting benches table:
+Execute the following SQL to create/update the crafting benches table:
 ```sql
 CREATE TABLE IF NOT EXISTS `f4_crafting` (
     `id` INT(11) NOT NULL AUTO_INCREMENT COMMENT 'Unique identifier for each crafting bench',
@@ -80,28 +83,37 @@ CREATE TABLE IF NOT EXISTS `f4_crafting` (
     `y` FLOAT NOT NULL COMMENT 'Y coordinate of the crafting bench',
     `z` FLOAT NOT NULL COMMENT 'Z coordinate of the crafting bench',
     `heading` FLOAT NOT NULL COMMENT 'Heading of the crafting bench',
+    `craft_queue` LONGTEXT NULL COMMENT 'Pending crafted items queue in JSON format',
+    `queue_updated_at` DATETIME NULL DEFAULT NULL COMMENT 'Last queue update timestamp',
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE `f4_crafting`
+    ADD COLUMN IF NOT EXISTS `craft_queue` LONGTEXT NULL COMMENT 'Pending crafted items queue in JSON format',
+    ADD COLUMN IF NOT EXISTS `queue_updated_at` DATETIME NULL DEFAULT NULL COMMENT 'Last queue update timestamp';
 ```
 
 ## Commands
-- `/addcraftingtable` — Add crafting bench (admin)
+- `/addcraftingtable` - Add crafting bench (admin)
+- `/removecraftingtable` - Remove nearest crafting bench (admin)
+- `/removecraftingtable [id]` - Remove crafting bench by table id (admin)
 
 ## Demo / Video
 Watch the demo video: https://youtu.be/aEZfh85U2n4
+Latest queue/table update demo: https://streamable.com/1qcyqe
 
-Discord : https://discord.gg/CXYX39zkma
+Discord: https://discord.gg/CXYX39zkma
 
 ## License
-MIT License — include the full MIT license text in the LICENSE file.
+MIT License - include the full MIT license text in the LICENSE file.
 
 ## Updates
 
 ### Latest Updates (October 2025)
 
 1. **Blueprint System Added**
-   - Introduced a professional blueprint system for crafting
-   - Add the following item to your `ox_inventory\data\items.lua`:
+   - Introduced a professional blueprint system for crafting.
+   - Add the following item to your `ox_inventory/data/items.lua`:
    ```lua
    ['blueprint'] = {
        label = 'Blueprint',
@@ -117,8 +129,8 @@ MIT License — include the full MIT license text in the LICENSE file.
    ```
 
 2. **Dynamic Crafting Time System**
-   - Crafting time now scales based on the number of items being crafted
-   - More items = longer crafting time for realistic progression
+   - Crafting time now scales based on the number of items being crafted.
+   - More items means longer crafting time for realistic progression.
 
 3. **Blueprint Distribution**
    - Use the following command to give players blueprints:
@@ -127,4 +139,29 @@ MIT License — include the full MIT license text in the LICENSE file.
    ```
 
 4. **Live Demo**
-   - View the latest update demonstration: https://streamable.com/031rwo
+   - View the previous update demonstration: https://streamable.com/031rwo
+
+### Latest Updates (February 2026)
+
+1. **Persistent Queue System**
+   - Crafted items are no longer auto-added when timer ends.
+   - Crafted outputs are stored in `f4_crafting.craft_queue`.
+   - Items remain after reconnect or server restart.
+
+2. **Table-Bound Claim System**
+   - Crafting jobs are tied to the same table where they started.
+   - Players must claim from that table only.
+   - Queue ownership is tied to player identity.
+
+3. **Ready Items UI Panel**
+   - Added right-side queue panel with vertical rows.
+   - Each row has its own `Take` button for manual claim.
+   - Supports multiple different crafted item types.
+
+4. **Admin Table Removal**
+   - Added `/removecraftingtable` and `/removecraftingtable [id]`.
+   - Removal sync is broadcast to all players.
+   - Includes extra local cleanup path for stuck objects.
+
+5. **Live Demo**
+   - Update video: https://streamable.com/1qcyqe

@@ -36,7 +36,7 @@ F4.CraftingItems = {
             { item = 'metalscrap', amount = 3, label = 'Metal Scrap' },
             { item = 'plastic', amount = 2, label = 'Plastic' },
             { item = 'rubber', amount = 1, label = 'Rubber' },
-            { item = 'blueprint', amount = 1, label = 'Blueprint', metadata = { type = 'tools' } }
+            { item = 'blueprint', amount = 1, label = 'Blueprint', metadata = { type = 'opmw' } }
         }
     },
     {
@@ -204,7 +204,7 @@ F4.XPPerHexagon = 100
 F4.CraftingRadius = 2.5
 F4.Debug = false
 
-function F4.interaction(id, coords) 
+function F4.interaction(id, coords, tableId)
     exports.interact:AddInteraction({
         coords = vec3(coords.x, coords.y, coords.z + 1.0),
         distance = 8.0,
@@ -215,7 +215,7 @@ function F4.interaction(id, coords)
             {
                 label = 'Crafting',
                 action = function(entity, coords, args)
-                    TriggerEvent('f4_crafting:openUI')
+                    TriggerEvent('f4_crafting:openUI', tableId)
                 end
             }
         }

@@ -9,6 +9,9 @@ let craftingItemIndex = -1;
 let craftingQuantity = 1;
 let craftingTimeLeft = 0;
 let craftingTotalTime = 0;
+let queueItems = [];
+let queueTimer = null;
+let queueActionLock = false;
 
 function selectItem(index) {
     if (!items[index]) return;
@@ -139,6 +142,121 @@ function updateInventoryDisplay() {
         
         resourcesContainer.appendChild(resourceSlot);
     });
+}
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function formatDuration(seconds) {
+    const safeSeconds = Math.max(0, Math.floor(seconds || 0));
+    if (safeSeconds >= 3600) {
+        const hours = Math.floor(safeSeconds / 3600);
+        const minutes = Math.floor((safeSeconds % 3600) / 60);
+        return `${hours}h ${minutes}m`;
+    }
+
+    if (safeSeconds >= 60) {
+        const minutes = Math.floor(safeSeconds / 60);
+        const secs = safeSeconds % 60;
+        return secs > 0 ? `${minutes}m ${secs}s` : `${minutes}m`;
+    }
+
+    return `${safeSeconds}s`;
+}
+
+function renderQueue() {
+    const queueList = document.getElementById('queueList');
+    if (!queueList) return;
+
+    if (!Array.isArray(queueItems) || queueItems.length === 0) {
+        queueList.innerHTML = `<div class="queue-empty">No crafted items on this table yet.</div>`;
+        return;
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+
+    queueItems.forEach(entry => {
+        const readyAt = Number(entry.readyAt || now);
+        const remaining = Math.max(0, readyAt - now);
+        entry.timeLeft = remaining;
+        entry.ready = remaining <= 0;
+    });
+
+    queueList.innerHTML = queueItems.map(entry => {
+        const readyClass = entry.ready ? 'ready' : 'pending';
+        const statusText = entry.ready ? 'Ready to collect' : `Ready in ${formatDuration(entry.timeLeft)}`;
+        const buttonState = entry.ready ? '' : 'disabled';
+
+        return `
+            <div class="queue-row ${readyClass}">
+                <div class="queue-item-meta">
+                    <img src="nui://ox_inventory/web/images/${escapeHtml(entry.item)}.png" alt="${escapeHtml(entry.label)}" class="queue-item-image">
+                    <div class="queue-item-text">
+                        <div class="queue-item-name">${escapeHtml(entry.label)}</div>
+                        <div class="queue-item-details">Qty: ${Number(entry.quantity || 1)}</div>
+                        <div class="queue-item-status">${statusText}</div>
+                    </div>
+                </div>
+                <button class="queue-take-btn" data-queue-id="${escapeHtml(entry.id)}" ${buttonState}>Take</button>
+            </div>
+        `;
+    }).join('');
+
+    queueList.querySelectorAll('.queue-take-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            const queueId = button.getAttribute('data-queue-id');
+            if (queueId) {
+                takeQueuedItem(queueId);
+            }
+        });
+    });
+}
+
+function stopQueueTimer() {
+    if (queueTimer) {
+        clearInterval(queueTimer);
+        queueTimer = null;
+    }
+}
+
+function startQueueTimer() {
+    stopQueueTimer();
+    queueTimer = setInterval(() => {
+        if (Array.isArray(queueItems) && queueItems.length > 0) {
+            renderQueue();
+        }
+    }, 1000);
+}
+
+function takeQueuedItem(queueId) {
+    if (!queueId || queueActionLock) return;
+
+    queueActionLock = true;
+
+    fetch(`https://${GetParentResourceName()}/claimQueuedItem`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ queueId })
+    })
+        .then(resp => resp.json())
+        .then(result => {
+            if (result && result.success) {
+                queueItems = queueItems.filter(entry => String(entry.id) !== String(queueId));
+                renderQueue();
+            }
+        })
+        .catch(() => {})
+        .finally(() => {
+            queueActionLock = false;
+        });
 }
 
 function craftItem() {
@@ -542,9 +660,12 @@ window.addEventListener('message', function(event) {
         const xpRequired = data.xpRequired || 600;
         const xpPerHex = data.xpPerHex || 100;
         const playerXP = (data.playerXP !== undefined && data.playerXP !== null) ? data.playerXP : 0;
+        queueItems = Array.isArray(data.queue) ? data.queue : [];
         
         renderItems();
         updateInventoryDisplay();
+        renderQueue();
+        startQueueTimer();
         updateLevelDisplay(playerLevel, playerXP, xpRequired, xpPerHex);
         
         const wrapper = document.querySelector('.ui-scale-wrapper');
@@ -558,9 +679,15 @@ window.addEventListener('message', function(event) {
     } else if (data.action === 'close') {
         const wrapper = document.querySelector('.ui-scale-wrapper');
         if (wrapper) wrapper.style.display = 'none';
+        queueItems = [];
+        renderQueue();
+        stopQueueTimer();
     } else if (data.action === 'updateInventory') {
         inventory = data.inventory || {};
         updateInventoryDisplay();
+    } else if (data.action === 'updateQueue') {
+        queueItems = Array.isArray(data.queue) ? data.queue : [];
+        renderQueue();
     } else if (data.action === 'updateLevel') {
         const xpRequired = data.xpRequired || 600;
         const xpPerHex = data.xpPerHex || 100;
@@ -627,4 +754,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
+    renderQueue();
 });
