@@ -214,8 +214,12 @@ function F4.interaction(id, coords, tableId)
         options = {
             {
                 label = 'Crafting',
+                args = {
+                    tableId = tableId
+                },
                 action = function(entity, coords, args)
-                    TriggerEvent('f4_crafting:openUI', tableId)
+                    local targetTableId = args and args.tableId or tableId
+                    TriggerEvent('f4_crafting:openUI', targetTableId)
                 end
             }
         }

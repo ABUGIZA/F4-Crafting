@@ -66,12 +66,16 @@ local function GenerateQueueId(src)
     return ('%d:%d:%d'):format(os.time(), src, math.random(100000, 999999))
 end
 
-local function BuildPlayerQueue(queue, citizenid)
+local function BuildPlayerQueue(queue, citizenid, tableId)
     local now = os.time()
     local result = {}
+    local targetTableId = tonumber(tableId)
 
     for _, entry in ipairs(queue) do
-        if entry.citizenid == citizenid then
+        local entryTableId = tonumber(entry.tableId)
+        local sameTable = (not targetTableId) or (entryTableId == targetTableId)
+
+        if entry.citizenid == citizenid and sameTable then
             local readyAt = tonumber(entry.readyAt) or now
             local timeLeft = math.max(0, readyAt - now)
             result[#result + 1] = {
@@ -311,7 +315,7 @@ QBCore.Functions.CreateCallback('f4_crafting:getQueue', function(source, cb, tab
     end
 
     local queue = DecodeQueue(craftingTable.craft_queue)
-    local playerQueue = BuildPlayerQueue(queue, Player.PlayerData.citizenid)
+    local playerQueue = BuildPlayerQueue(queue, Player.PlayerData.citizenid, tableNum)
     cb(playerQueue)
 end)
 
@@ -466,7 +470,8 @@ QBCore.Functions.CreateCallback('f4_crafting:claimQueuedItem', function(source, 
     local foundIndex = nil
     local foundEntry = nil
     for i, entry in ipairs(queue) do
-        if tostring(entry.id or '') == targetQueueId and entry.citizenid == citizenid then
+        local sameTable = tonumber(entry.tableId) == tableNum
+        if tostring(entry.id or '') == targetQueueId and entry.citizenid == citizenid and sameTable then
             foundIndex = i
             foundEntry = entry
             break

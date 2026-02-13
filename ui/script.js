@@ -9,6 +9,8 @@ let craftingItemIndex = -1;
 let craftingQuantity = 1;
 let craftingTimeLeft = 0;
 let craftingTotalTime = 0;
+let uiCurrentTableId = null;
+let craftingTableId = null;
 let queueItems = [];
 let queueTimer = null;
 let queueActionLock = false;
@@ -308,7 +310,14 @@ function cancelCraft() {
     modal.classList.remove('show');
 }
 
-function startCountdown(totalTime) {
+function startCountdown(totalTime, tableId = null) {
+    const targetTableId = Number(tableId ?? uiCurrentTableId ?? 0) || null;
+    const currentTableNum = Number(uiCurrentTableId ?? 0) || null;
+
+    if (targetTableId && currentTableNum && targetTableId !== currentTableNum) {
+        return;
+    }
+
     if (isCrafting && countdownInterval) {
         return;
     }
@@ -324,6 +333,7 @@ function startCountdown(totalTime) {
     if (!item) return;
     
     isCrafting = true;
+    craftingTableId = targetTableId || currentTableNum;
     craftingItemIndex = selectedItem;
     craftingQuantity = quantity;
     craftingTimeLeft = totalTime;
@@ -438,7 +448,7 @@ function updateCountdownDisplay(timeLeft, totalTime) {
     }
 }
 
-function stopCountdown() {
+function stopCountdown(immediate = false) {
     if (countdownInterval) {
         clearInterval(countdownInterval);
         countdownInterval = null;
@@ -449,17 +459,31 @@ function stopCountdown() {
     craftingQuantity = 1;
     craftingTimeLeft = 0;
     craftingTotalTime = 0;
+    craftingTableId = null;
+
+    const progressContainer = document.getElementById('craftingProgressContainer');
+    if (!progressContainer) {
+        return;
+    }
     
+    if (immediate) {
+        progressContainer.style.display = 'none';
+        return;
+    }
+
     setTimeout(() => {
-        const progressContainer = document.getElementById('craftingProgressContainer');
-        if (progressContainer) {
-            progressContainer.style.display = 'none';
-        }
+        progressContainer.style.display = 'none';
     }, 1500);
 }
 
 function restoreCraftingState() {
     if (!isCrafting || craftingTimeLeft <= 0 || craftingItemIndex < 0) {
+        return;
+    }
+
+    const currentTableNum = Number(uiCurrentTableId ?? 0) || null;
+    const craftingTableNum = Number(craftingTableId ?? 0) || null;
+    if (craftingTableNum && currentTableNum && craftingTableNum !== currentTableNum) {
         return;
     }
     
@@ -654,6 +678,13 @@ window.addEventListener('message', function(event) {
     const data = event.data;
     
     if (data.action === 'open') {
+        const nextTableId = Number(data.tableId ?? 0) || null;
+        const previousTableId = Number(uiCurrentTableId ?? 0) || null;
+        if (previousTableId !== nextTableId) {
+            stopCountdown(true);
+        }
+        uiCurrentTableId = nextTableId;
+
         items = data.items || [];
         playerLevel = (data.playerLevel !== undefined && data.playerLevel !== null) ? data.playerLevel : 0;
         inventory = data.inventory || {};
@@ -679,6 +710,8 @@ window.addEventListener('message', function(event) {
     } else if (data.action === 'close') {
         const wrapper = document.querySelector('.ui-scale-wrapper');
         if (wrapper) wrapper.style.display = 'none';
+        stopCountdown(true);
+        uiCurrentTableId = null;
         queueItems = [];
         renderQueue();
         stopQueueTimer();
@@ -697,9 +730,9 @@ window.addEventListener('message', function(event) {
     } else if (data.action === 'showNotification') {
         showNotification(data.message, data.type);
     } else if (data.action === 'startCountdown') {
-        startCountdown(data.time);
+        startCountdown(data.time, data.tableId);
     } else if (data.action === 'stopCountdown') {
-        stopCountdown();
+        stopCountdown(true);
     }
 });
 

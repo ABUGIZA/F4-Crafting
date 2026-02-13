@@ -84,6 +84,21 @@ local function FindTableCoordsById(tableId)
     return nil
 end
 
+local function GetTableById(tableId)
+    local targetId = tonumber(tableId)
+    if not targetId then
+        return nil
+    end
+
+    for _, tableData in ipairs(craftingTables) do
+        if tonumber(tableData.id) == targetId then
+            return tableData
+        end
+    end
+
+    return nil
+end
+
 local function RemoveTableLocally(tableId, x, y, z)
     local tableNum = tonumber(tableId)
     if not tableNum then
@@ -237,7 +252,21 @@ function OpenCraftingUI(tableId)
     if isUIOpen then return end
 
     local targetTableId = tonumber(tableId)
-    if not targetTableId then
+    if targetTableId then
+        local selectedTable = GetTableById(targetTableId)
+        if not selectedTable then
+            QBCore.Functions.Notify('Invalid crafting table', 'error')
+            return
+        end
+
+        local playerPed = PlayerPedId()
+        local playerCoords = GetEntityCoords(playerPed)
+        local tableCoords = vector3(selectedTable.x, selectedTable.y, selectedTable.z)
+        if #(playerCoords - tableCoords) > ((F4.CraftingRadius or 2.5) + 2.0) then
+            QBCore.Functions.Notify('You are too far from this crafting table', 'error')
+            return
+        end
+    else
         local nearestTable = GetNearestCraftingTable(F4.CraftingRadius + 1.0)
         if not nearestTable then
             QBCore.Functions.Notify('No crafting table nearby', 'error')
@@ -543,7 +572,8 @@ RegisterNetEvent('f4_crafting:startCountdown', function(totalTime)
     if isUIOpen then
         SendNUIMessage({
             action = 'startCountdown',
-            time = totalTime
+            time = totalTime,
+            tableId = currentTableId
         })
     end
 end)
